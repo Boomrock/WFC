@@ -29,11 +29,18 @@ namespace WFC
             count = 1;
         }
 
-        public Neighbour(Tile<TypeOfContent> tile) : base(tile.Content)
+        public Neighbour(Tile<TypeOfContent> tile) : base(tile)
         {
             count = 1; 
         }
-
+        public static void CalculateFrequency(List<Neighbour<TypeOfContent> >neighbours)
+        {
+            int TotalCount = 0;
+            foreach (var neighbour in neighbours)
+                TotalCount += neighbour.Count;
+            foreach (var neighbour in neighbours)
+                neighbour.Frequency = (float)neighbour.Count / TotalCount;
+        }
 
 
     }

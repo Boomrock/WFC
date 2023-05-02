@@ -5,7 +5,7 @@ namespace WFC
 {
     internal class Level<TypeOfContent>
     {
-
+        //двойной лист потому что хранит в себе разные стороны
         private List<List<Neighbour<TypeOfContent>>> neighbours;
 
         public Level() {
@@ -17,6 +17,9 @@ namespace WFC
                 new List<Neighbour<TypeOfContent>>()
             };
         }
+
+        internal List<List<Neighbour<TypeOfContent>>> Neighbours { get => neighbours; set => neighbours = value; }
+
         public void AddNeighbour(Tile<TypeOfContent> Tile, Direction direction)
         {
             Neighbour<TypeOfContent> neighbour = new Neighbour<TypeOfContent>(Tile);
@@ -32,12 +35,5 @@ namespace WFC
         }
 
 
-    }
-    enum Direction
-    {
-        Top,
-        Left,
-        Down,
-        Right
     }
 }

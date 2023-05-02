@@ -15,6 +15,12 @@ namespace WFC
         public TypeOfContent Content { get => content; set => content = value; }
         internal List<Level<TypeOfContent>> Levels { get => levels; set => levels = value; }
 
+        public Tile(Tile<TypeOfContent> tile)
+        {
+            this.levels = tile.levels;
+            this.content = tile.content;
+            this.hash = tile.hash;
+        }
         public Tile(TypeOfContent content)
         {
             this.content = content;
@@ -29,12 +35,14 @@ namespace WFC
 
         public static bool operator ==(Tile<TypeOfContent> left, Tile<TypeOfContent> right)
         {
-
+            if (left is null)
+                return true;
             return left.Equals(right);
+
         }
         public static bool operator !=(Tile<TypeOfContent> left, Tile<TypeOfContent> right)
         {
-            return left.Equals(right);
+            return !left.Equals(right);
         }
         public override bool Equals(object obj)
         {

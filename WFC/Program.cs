@@ -19,12 +19,12 @@ namespace WFC
                    { 0, 1},
             };
             char[,] map = new char[,] {
-            {'0', '0', '0', '0', '0', '0'},
-            {'c', 'T', 'T', 'c', '0', '0'},
-            {'0', 'c', 'c', '0', 'T', 'O'},
-            {'0', '0', 'x', '0', 'T', 'O'},
-            {'D', '0', '0', '0', '0', '0'},
-            {'0', '0', 'S', 'S', 'S', '0'}
+            {'-', '-', '-', '-', '-', '-'},
+            {'c', 'T', 'T', 'c', '-', '-'},
+            {'-', 'c', 'c', 'x', 'T', 'O'},
+            {'-', 'x', 'R', 'x', 'T', 'O'},
+            {'D', 'x', 'x', 'x', '-', '-'},
+            {'-', '-', 'S', 'S', 'S', '-'}
 
             };
             WaveCollapsingFunction<char> function = new WaveCollapsingFunction<char>();
@@ -37,11 +37,17 @@ namespace WFC
                 }
             }
             function.Analysis(tiles);
+            var newMap = function.Colaps(6, 6);
+            for (int i = 0; i < map.GetLength(0); i++)
+            {
+                for (int z = 0; z < map.GetLength(1); z++)
+                {
+                    Console.Write(newMap[i, z]);
+                }
+                Console.WriteLine();
 
-
+            }
 
         }
-
-     
     }
 }

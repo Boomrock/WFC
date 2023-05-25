@@ -42,6 +42,5 @@ namespace WFC
                 neighbour.Frequency = (float)neighbour.Count / TotalCount;
         }
 
-
     }
 }

@@ -9,15 +9,16 @@ namespace WFC
     internal class Tile<TypeOfContent>
     {
         TypeOfContent content;
-        List<Level<TypeOfContent>> levels;
+        NeighbourArray<TypeOfContent> neighbours;
         public byte[] hash;
 
         public TypeOfContent Content { get => content; set => content = value; }
-        internal List<Level<TypeOfContent>> Levels { get => levels; set => levels = value; }
+        internal NeighbourArray<TypeOfContent> Neighbours { get => neighbours; set => neighbours = value; }
+
 
         public Tile(Tile<TypeOfContent> tile)
         {
-            this.levels = tile.levels;
+            this.neighbours = tile.neighbours;
             this.content = tile.content;
             this.hash = tile.hash;
         }
@@ -25,8 +26,7 @@ namespace WFC
         {
             this.content = content;
             this.hash =  HashUtils.GetHashObject(content);
-            this.levels = new List<Level<TypeOfContent>>();
-            this.levels.Add(new Level<TypeOfContent>());
+            this.neighbours = new NeighbourArray<TypeOfContent>(1);
             if(hash.Length > 16)
             {
                 throw new Exception("в Tile длинна хэша больше 16");

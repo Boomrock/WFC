@@ -5,23 +5,40 @@ namespace WFC
 {
     internal class TileFunctions
     {
-        internal static int countLayers = 1; 
+        internal static int countLayers = 1;
+        public static int GetRandomIndexByWeights(int[] count)
+        {
+            float sum = 0;
+            float[] weight = new float[count.Length];
+            for (int z = 0; z < count.Length; z++) sum += count[z];
+            for (int r = 0; r < count.Length; r++) weight[r] = (float)count[r] / sum;
+            Random random = new Random();
+            float percent = (float)random.NextDouble();
+            float curentPercent = 0;
+            int i = 0;
+            while (percent > curentPercent)
+            {
+                curentPercent += weight[i];
+                i++;
+            }
+            return i;
+
+        }
         /// <summary>
         /// добавляет соседей 
         /// </summary>
-        /// <typeparam name="TypeOfContent"></typeparam>
+        /// <typeparam name="TypeOfContent">тип контента</typeparam>
         /// <param name="arrayContents"></param>
-        /// <param name="indexLevel"></param>
-        /// <param name="y"></param>
-        /// <param name="x"></param>
-        internal static void AddNeighbour<TypeOfContent>(Tile<TypeOfContent>[,] arrayContents, int indexLevel, int y, int x)
+        /// <param name="tile">кому добавляем соседей</param>
+        /// <param name="y">координата tile</param>
+        /// <param name="x">координата tile</param>
+        internal static void AddNeighbour<TypeOfContent>(Tile<TypeOfContent>[,] arrayContents, Tile<TypeOfContent>  tile, int y, int x)
         {
-            var tile = arrayContents[y, x];
             LookAtNeighbour(arrayContents, y, x, (offsetY, offsetX) =>
             {
-                tile.Neighbours.AddNeighbour(arrayContents[y, x], offsetY - y, offsetX - x );
+                tile.Neighbours.AddNeighbour(arrayContents[offsetY, offsetY], offsetY - y, offsetX - x );// 
             });
-        }
+        }  
    /// <summary>
    /// Проходит все точки вокруг (y,x) по спирали
    /// </summary>
@@ -32,7 +49,7 @@ namespace WFC
    /// <param name="LayersCount"></param>
    /// <param name="action"></param>
    /// <param name=""></param>
-        internal static void SpiralArrayTraversal<type>(type[,] arrayContents, int y, int x, Action<int, int> action)
+        internal static void SpiralArrayTraversal<type>(type[,] arrayContents, int y, int x, Action<int, int> action, int LayerCount = -1)
         {
             // Создаем очередь для хранения координат элементов, которые нужно посетить
             Queue<(int, int)> queue = new Queue<(int, int)>();
@@ -44,25 +61,31 @@ namespace WFC
             // Пока очередь не пуста
             while (queue.Count > 0)
             {
+
                 // Извлекаем первый элемент из очереди
                 (x , y) = queue.Dequeue();
                 // Делаем что-то с этим элементом
                 action(y, x);
                 // Проходим по всем четырем направлениям от этого элемента
-                int[] dx = { 0, 0, -1, 1 }; // Смещение по x
-                int[] dy = { -1, 1, 0, 0 }; // Смещение по y
-                for (int k = 0; k < 4; k++)
+                int[] dx = { 0, 0, -1, 1, -1, 1, -1, 1}; // Смещение по x
+                int[] dy = { -1, 1, 0, 0, -1, 1, 1, -1 }; // Смещение по y
+
+                if (LayerCount != 0)
                 {
-                    // Вычисляем координаты соседнего элемента
-                    int nx = x + dx[k];
-                    int ny = y + dy[k];
-                    // Проверяем, что они в пределах массива и не были посещены
-                    if (nx >= 0 && nx < arrayContents.GetLength(1) && ny >= 0 && ny < arrayContents.GetLength(0) && !visited[ny, nx])
+                    for (int k = 0; k < 4; k++)
                     {
-                        // Добавляем соседний элемент в очередь и отмечаем его как посещенный
-                        queue.Enqueue((ny,nx));
-                        visited[ny, nx] = true;
+                        // Вычисляем координаты соседнего элемента
+                        int nx = x + dx[k];
+                        int ny = y + dy[k];
+                        // Проверяем, что они в пределах массива и не были посещены
+                        if (nx >= 0 && nx < arrayContents.GetLength(1) && ny >= 0 && ny < arrayContents.GetLength(0) && !visited[ny, nx])
+                        {
+                            // Добавляем соседний элемент в очередь и отмечаем его как посещенный
+                            queue.Enqueue((ny, nx));
+                            visited[ny, nx] = true;
+                        }
                     }
+                    LayerCount--;
                 }
             }
         }
@@ -76,7 +99,7 @@ namespace WFC
                 {
                     if (_x == 0 && _y == 0)
                         continue;
-                    int offsetY = y + _x;
+                    int offsetY = y + _y;
                     int offsetX = x + _x;
                     if (!(offsetX >= 0 &&
                         offsetY >= 0 &&

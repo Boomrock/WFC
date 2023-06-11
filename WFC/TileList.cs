@@ -2,34 +2,44 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Serialization;
 
 namespace WFC
 {
-    internal class TileList<Type, TypeOfContent> :List<Type> where Type:Tile<TypeOfContent>
+    internal class TileList<Type, TypeOfContent> : List<Type> where Type : Tile<TypeOfContent>
     {
         private List<Type> tiles;
 
         internal TileList(List<Tile<TypeOfContent>> tiles)
         {
-            this.tiles = tiles as List<Type>;
+            this.AddRange(tiles.GetRange(0,tiles.Count) as IEnumerable<Type>);
         }
 
         internal TileList()
         {
-            this.tiles = new List<Type>();
+
 
         }
 
+
         internal void RemoveAllExcept(Tile<TypeOfContent> tile)
         {
-            foreach (var item in this)
+            if (!this.Contains(tile))
+                return;
+            int i = 0;
+            while (this.Count != 1)
             {
+                var item = this[i];
                 if (item != tile)
                     this.Remove(item);
+                else 
+                    i++;
             }
+             
+            
 
         }
         /// <summary>
@@ -44,16 +54,27 @@ namespace WFC
             //Для соседней точки наша точка имеет координаты - ( int offsetY, int offsetX)
             //Смотрим каких соседей нет у соседней точки в нашей строчке
             //удаляем такие тайлы
+            if (this.Count == 1)
+                return;
+
             NeighbourArray<TypeOfContent> neighbours = Tile.Neighbours;
-            foreach (var tile in this)
+            for (int i = 0; i < this.Count; i++)
             {
-                if (!neighbours[-offsetY, -offsetX].Contains(tile as Tile<TypeOfContent>))
+                var tile = this[i];
+                if (!(neighbours[offsetY, offsetX].Contains(tile as Tile<TypeOfContent>)))
                 {
                     Remove(tile);
                 }
             }
 
         }
+        /// <summary>
+        /// Возвращает рандомный индекс с учетом весов 
+        /// </summary>
+        /// <param name="weight"> сумма всех весов должна быть == 1</param>
+        /// <returns></returns>
+
+
 
 
     }

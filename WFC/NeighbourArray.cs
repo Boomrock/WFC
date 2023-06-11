@@ -41,16 +41,22 @@ namespace WFC
         {
             return neighbours.GetLength(dimension);
         }
-
-        internal void AddNeighbour(Tile<TypeOfContent> tile, int offsetY, int offsetX)
+        /// <summary>
+        /// Добавляет соседей
+        /// </summary>
+        /// <param name="neighboursTile"></param>
+        /// <param name="offsetY">Положение относительно </param>
+        /// <param name="offsetX">Положение относительно </param>
+        internal void AddNeighbour(Tile<TypeOfContent> neighboursTile, int offsetY, int offsetX)
         {
             if(this[offsetY, offsetX] == null)
                 this[offsetY, offsetX] = new TileList<Neighbour<TypeOfContent>, TypeOfContent>();
+
             TileList<Neighbour<TypeOfContent>, TypeOfContent> neighbour = this[offsetY, offsetX];
-            int index = neighbour.IndexOf(new Neighbour<TypeOfContent>(tile));
+            int index = neighbour.IndexOf(new Neighbour<TypeOfContent>(neighboursTile));
             if(index < 0)
             {
-                neighbour.Add(new Neighbour<TypeOfContent>(tile));
+                neighbour.Add(new Neighbour<TypeOfContent>(neighboursTile));
                 return;
             }
             else

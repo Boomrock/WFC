@@ -1,202 +1,222 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-
+using static WFC.TileFunctions;
 namespace WFC
 {
-    internal class WaveCollapsingFunction<TypeOfContent>
-    {       //                              top     left     down     right     
-        int[,] direction = new int[,] { { -1, 0 }, { 0, -1 }, { 1, 0 }, { 0, 1 } };
-        List<Tile<TypeOfContent>> tiles;
+    /*
+    Смотрим по соседним клеткам
+    Добавляем соседей 
+    Вычисляем частоту 
+     
+     */
+    internal class WaveCollapsingFunction<TypeOfContent> 
+    {
+        private const int LayerCount = 1;
+   
+        TileList<Tile<TypeOfContent>, TypeOfContent> tiles;
+         
         public WaveCollapsingFunction()
         {
-            tiles = new List<Tile<TypeOfContent>>();
+            tiles = new TileList<Tile<TypeOfContent>, TypeOfContent>();
         }
-        public TypeOfContent[,] Colaps(int sizeY, int sizeX)
+
+        /// <summary>
+        /// Генерация карты
+        /// </summary>
+        /// <param name="sizeY"></param>
+        /// <param name="sizeX"></param>
+        /// <returns></returns>
+        public TypeOfContent[,] Generate(Vector2DInt size, TypeOfContent content, TypeOfContent Defualt,Vector2DInt CenterColaps)
         {
-            TypeOfContent[,] contents = new TypeOfContent[sizeY, sizeX];
-            Random random = new Random();
-            int YFirstContent = random.Next(0, contents.GetLength(0));
-            int XFirstContent = random.Next(0, contents.GetLength(1));
-            Tile<TypeOfContent> tile = tiles.Find(i => i.Equals(new Tile<char>('R')));
-
-            contents[0, 0] = GetElement(tile);
-
-            for (int y = 0; y < sizeY; y++)
-            {
-                for (int x = 0; x < sizeX; x++)
-                {
-                    tile = tiles.Find(i => i.Equals(new Tile<TypeOfContent>(contents[y, x])));
-                    List<Neighbour<TypeOfContent>> Neighbours = new List<Neighbour<TypeOfContent>>();// соседи точки 
-                    if (tile == null)
-                        continue;
-                    
-                    for (int i = 0; i < direction.GetLength(0); i++)
-                    {
-                        int offsetY = y + direction[i, 0];
-                        int offsetX = x + direction[i, 1];
-                        if (!(offsetX >= 0 &&
-                            offsetY >= 0 &&
-                            offsetX < contents.GetLength(1) &&
-                            offsetY < contents.GetLength(0)))
-                            continue;
-                        int index = tiles.FindIndex(i => i == new Tile<TypeOfContent>(contents[offsetY, offsetX]));
-                        if (index != -1)
-                            Neighbours.Add(new Neighbour<TypeOfContent>(tiles[index]));
-
-
-
-
-                    }
-                    for (int i = 0; i < direction.GetLength(0); i++)
-                    {
-                        int offsetY = y + direction[i, 0];
-                        int offsetX = x + direction[i, 1];
-                        if (!(offsetX >= 0 &&
-                            offsetY >= 0 &&
-                            offsetX < contents.GetLength(1) &&
-                            offsetY < contents.GetLength(0)))
-                            continue;
-                        TypeOfContent content = GetElement(tile, Neighbours);
-                        if (content.Equals(default(TypeOfContent)) && contents[offsetY, offsetX] != null)
-                            continue;
-                        contents[offsetY, offsetX] = content;
-
-
-
-                    }
-
-                    
-                }
-            }
-           
-            
+            //готово
+            TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap = GetColapsMap(size);
+            //готово
+            colapsMap[CenterColaps.y, CenterColaps.x].RemoveAllExcept(new Tile<TypeOfContent>(content));
+            Colaps(colapsMap, CenterColaps);
+            //не готово 
+            PlaceTile(colapsMap, CenterColaps);
+            //не готово
+            TypeOfContent[,] contents = GetContentsMap(Defualt, colapsMap);
             return contents;
 
+
         }
+
+        private void PlaceTile(TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap, Vector2DInt centerColaps)
+        {
+            SpiralArrayTraversal(colapsMap, centerColaps, (point) =>
+            {
+                ColapsTile(colapsMap, point);
+            });
+        }
+
+        private static  void ColapsTile(TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap, Vector2DInt point)
+        {
+
+            //var tileList = colapsMap[point.y, point.x];
+            //if (tileList.Count > 0)
+            //    tileList.RemoveAllExcept(tileList[GetRandomTile(tileList.Count)]);
+            var tileList = colapsMap[point.y, point.x];
+            int[] count = new int[tileList.Count];
+
+            SpiralArrayTraversal(colapsMap, point, (offset) =>
+            {
+                var offsetPoint = offset - point;
+                if (offsetPoint.x == 0 && offsetPoint.x == 0)
+                    return;
+                for (int i = 0; i < count.Length; i++)
+                {
+                    var tile = tileList[i];
+                    foreach (var neighbour in colapsMap[offset.y, offset.x])
+                    {
+                        int index = neighbour.Neighbours[offsetPoint].IndexOf(new Neighbour<TypeOfContent>(tile));
+                        if (index != -1)
+                        {
+                            count[i] += neighbour.Neighbours[offsetPoint][index].Count;
+                        }
+                    }
+                }
+
+
+            }, LayerCount);
+            int randomIndex = GetRandomIndexByWeights(count);
+            if (tileList.Count > 0)
+                tileList.RemoveAllExcept(tileList[randomIndex]);
+
+        }
+
+        private TileList<Tile<TypeOfContent>, TypeOfContent>[,] GetColapsMap(Vector2DInt size)
+        {
+            TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap = new TileList<Tile<TypeOfContent>, TypeOfContent>[size.y, size.x];
+            for (int y = 0; y < size.y; y++)
+                for (int x = 0; x < size.x; x++)
+                {
+                        colapsMap[y, x] = new TileList<Tile<TypeOfContent>, TypeOfContent>(tiles.GetRange(0, tiles.Count));
+                }
+
+            return colapsMap;
+        }
+        private static TypeOfContent[,] GetContentsMap(TypeOfContent Defualt, TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap)
+        {
+
+            TypeOfContent[,] contents = new TypeOfContent[colapsMap.GetLength(0), colapsMap.GetLength(1)];
+            SpiralArrayTraversal(colapsMap,new Vector2DInt(), (offset) =>
+            {
+                if(colapsMap[offset.y, offset.x].Count > 1) 
+                    throw new Exception();
+                
+                if (colapsMap[offset.y, offset.x].Count == 1)
+                    contents[offset.y, offset.x] = colapsMap[offset.y, offset.x][0].Content;
+                else
+                    contents[offset.y, offset.x] = Defualt;
+            });
+            return contents;
+        }
+
+        private void Colaps(TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap, Vector2DInt positionsTile)
+        {
+            int maxTryFix = 1000;
+            int iteration = 0;
+            int maxIteration = colapsMap.GetLength(0) * colapsMap.GetLength(1);
+            while (iteration++ < maxIteration)
+            {
+
+                int fixCounter = 0;
+                Queue<Vector2DInt> queue = new Queue<Vector2DInt>();
+                AddNeighbourToQueue(colapsMap, queue, positionsTile);
+                TileList<Tile<TypeOfContent>, TypeOfContent> posibleTile;
+                while (queue.Count > 0 && maxTryFix > fixCounter)
+                {
+                    positionsTile = queue.Dequeue();
+                    posibleTile = colapsMap[positionsTile.y, positionsTile.x];
+                    int countRemoved = posibleTile.RemoveAll(t => !IsTilePossible(t, positionsTile, colapsMap));
+                    if (countRemoved > 0) AddNeighbourToQueue(colapsMap, queue, positionsTile);
+                    //if(posibleTile.Count == 0)
+                    //{
+                    //    SpiralArrayTraversal(colapsMap, positionsTile, (positionNeighbour) =>
+                    //    {
+                    //        colapsMap[positionNeighbour.y, positionNeighbour.x].Clear();
+                    //        colapsMap[positionNeighbour.y, positionNeighbour.x].AddRange(tiles);
+                    //    }, LayerCount);
+                    //    AddNeighbourToQueue(colapsMap, queue, positionsTile);
+                    //    queue.Enqueue(positionsTile);
+
+
+                    //    fixCounter++;
+                    //}
+                }
+                if(fixCounter > 0) Console.WriteLine(fixCounter);
+                int maxCountTiles = colapsMap[0, 0].Count;
+                Vector2DInt pointMaxCount = new Vector2DInt();
+                SpiralArrayTraversal(colapsMap, new Vector2DInt(), (point) =>
+                {
+                    if (maxCountTiles < colapsMap[point.y, point.x].Count)
+                    {
+                        maxCountTiles = colapsMap[point.y, point.x].Count;
+                        pointMaxCount = point;
+                    }
+                });
+                if (maxCountTiles <= 1) return;
+                ColapsTile(colapsMap, pointMaxCount);
+            }
+        }
+
+        private static bool IsTilePossible(Tile<TypeOfContent> tile, Vector2DInt positionsTile, TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap)
+        {
+            bool isTilePossible = true;
+            SpiralArrayTraversal(colapsMap, positionsTile, (positionsNeighbour) =>
+            {
+                isTilePossible &= CanPlaceTile(positionsTile, tile, colapsMap[positionsNeighbour.y, positionsNeighbour.x], positionsNeighbour);
+            }, LayerCount);
+            return isTilePossible;
+        }
+        private static bool CanPlaceTile(Vector2DInt positionsTile, Tile<TypeOfContent> tile, TileList<Tile<TypeOfContent>, TypeOfContent> Neighbours, Vector2DInt positionsNeighbour)
+        {
+            var offset = positionsNeighbour - positionsTile;
+            if (offset.y == 0 && offset.x == 0)
+                return true;
+            return Neighbours.Any(neighbour => neighbour.Neighbours[-offset.y, -offset.x].Contains(tile));
+        }
+        //переделать
+        private static void AddNeighbourToQueue(TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap, Queue<Vector2DInt> queue, Vector2DInt positionsTile)
+        {
+            SpiralArrayTraversal(colapsMap, positionsTile, (position)=>
+            {
+                if(position != positionsTile)
+                    queue.Enqueue(position);
+            }, LayerCount);
+        }
+
+
+
+        /// <summary>
+        /// Функция анализа, вроде закончена 
+        /// </summary>
+        /// <param name="arrayContents"></param>
         public void Analysis(Tile<TypeOfContent>[,] arrayContents)
         {
             for (int y = 0; y < arrayContents.GetLength(0); y++)
             {
                 for (int x = 0; x < arrayContents.GetLength(1); x++)
                 {
-                    if (tiles.Contains(arrayContents[y, x]))
+                    int index = tiles.IndexOf(arrayContents[y, x]);
+                    if (index >= 0 )
                     {
-                        AddNeighbour(arrayContents, 0, y, x);
+                        AddNeighbour(arrayContents, tiles[index], new Vector2DInt(y,x));
                         continue;
                     }
                     else
                     {
                         tiles.Add(arrayContents[y, x]);
-                        AddNeighbour(arrayContents, 0, y, x);
+                        AddNeighbour(arrayContents, tiles[tiles.Count - 1], new Vector2DInt(y, x));
                         continue;
                     }
                 }
 
             }
-            LogAnalys();
-        }
-        private void AddNeighbour(Tile<TypeOfContent>[,] arrayContents, int indexLevel, int y, int x)
-        {
-            int indexTile = tiles.IndexOf(arrayContents[y, x]);
-            if (indexTile == -1)
-                throw new Exception("AddNeighbour: tiles не содержит элемента из arrayContents");
-
-            for (int i = 0; i < direction.GetLength(0); i++)
-            {
-                int offsetY = y + direction[i, 0];
-                int offsetX = x + direction[i, 1];
-                if (!(offsetX > 0 &&
-                    offsetY > 0 &&
-                    offsetX < arrayContents.GetLength(1) &&
-                    offsetY < arrayContents.GetLength(0)))
-                    continue;
-                tiles[indexTile].Levels[indexLevel].AddNeighbour(arrayContents[offsetY, offsetX], (Direction)i);
-            }
-            foreach (var tile in tiles)
-            {
-                foreach (var level in tile.Levels)
-                {
-                    foreach (var neighbourside in level.Neighbours)
-                    {
-                        Neighbour<TypeOfContent>.CalculateFrequency(neighbourside);
-                    }
-
-                }
-
-            }
-        }
-
-        private void LogAnalys()
-        {
-            Console.WriteLine("Analysis complete. Unique tile:" + tiles.Count);
-            var tile = tiles.Find(i => i.Equals(new Tile<char>('x')));
-            Console.WriteLine("For: " + tile.Content.ToString());
-            foreach (var Neighbour in tile.Levels[0].Neighbours)
-            {
-                foreach (var item in Neighbour)
-                {
-                    Console.Write(item.Content.ToString() + " ");
-                }
-  
-
-                Console.WriteLine();
-            }
-        }
-
-
-
-
-        private TypeOfContent GetElement(Tile<TypeOfContent> tile, List<Neighbour<TypeOfContent>> Neighbours = null )
-        {
-            Random random = new Random();
-            if (tile == null)
-                return default;
-            if (Neighbours == null)
-                return tiles[random.Next(0, tiles.Count)].Content;
-
-            List<Neighbour<TypeOfContent>> PosibleTiles = new List<Neighbour<TypeOfContent>>();
-
-            foreach (var level in tile.Levels)
-            {
-                foreach (var side in level.Neighbours)
-                {
-                    foreach (var neighbour in side)
-                    {
-
-                        bool TileIsPosible = Neighbours.All(_neighbour =>
-                                                _neighbour.Levels.All(
-                                                            level =>
-                                                                level.Neighbours.Any(
-                                                                        side => side.Contains(neighbour))
-                                                            ));
-
-                        if (TileIsPosible && 
-                           !PosibleTiles.Contains(neighbour))
-                        {
-                            PosibleTiles.Add(neighbour);
-                        }
-                   
-
-                    }
-
-                }
-            }
-
-
-            float percentage = (float)random.NextDouble();
-            float currentPercentage = 0;
-            foreach (var posibleTile in PosibleTiles)
-            {
-                currentPercentage += posibleTile.Frequency;
-                if(currentPercentage >= percentage)
-                {
-                    return posibleTile.Content;
-                }
-            }
-            return default;
-
         }
     }
+
+    
 }

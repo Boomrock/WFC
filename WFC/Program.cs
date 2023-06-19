@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Net.Http.Headers;
-using System.Threading;
+
 
 namespace WFC
 {
@@ -11,20 +8,13 @@ namespace WFC
         static void Main(string[] args)
         {
 
-            int[,] dimensions = new int[,]
-            {
-                   {-1, 0},
-                   { 0,-1},
-                   { 1, 0},
-                   { 0, 1},
-            };
             char[,] map = new char[,] {
             {'-', '-', '-', '-', '-', '-'},
-            {'c', 'T', 'T', 'c', '-', '-'},
-            {'-', 'c', 'c', 'x', 'T', 'O'},
-            {'-', 'x', 'R', 'x', 'T', 'O'},
-            {'D', 'x', 'x', 'x', '-', '-'},
-            {'-', '-', 'S', 'S', 'S', '-'}
+            {'-', '-', '-', 'c', '-', '-'},
+            {'-', 'c', 'c', 'x', 'c', '-'},
+            {'c', 'x', 'x', 'x', 'x', 'c'},
+            {'x', 'x', 'x', 'x', 'x', 'x'},
+            {'x', 'x', 'x', 'x', 'x', 'x'}
 
             };
             WaveCollapsingFunction<char> function = new WaveCollapsingFunction<char>();
@@ -36,11 +26,13 @@ namespace WFC
                     tiles[i, z] = new Tile<char>(map[i, z]);
                 }
             }
+
             function.Analysis(tiles);
-            var newMap = function.Colaps(6, 6);
-            for (int i = 0; i < map.GetLength(0); i++)
+
+            var newMap = function.Generate(new Vector2DInt(30, 30), '-', '*', new Vector2DInt(15,15)  );
+            for (int i = 0; i < newMap.GetLength(0); i++)
             {
-                for (int z = 0; z < map.GetLength(1); z++)
+                for (int z = 0; z < newMap.GetLength(1); z++)
                 {
                     Console.Write(newMap[i, z]);
                 }

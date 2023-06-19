@@ -35,8 +35,6 @@ namespace WFC
                 else 
                     i++;
             }
-             
-            
 
         }
         /// <summary>

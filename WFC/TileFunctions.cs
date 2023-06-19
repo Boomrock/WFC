@@ -9,6 +9,8 @@ namespace WFC
         static Random random = new Random();
         public static int GetRandomIndexByWeights(int[] count)
         {
+            if (count.Length == 0)
+                return 0;
             float sum = 0;
             float[] weight = new float[count.Length];
             for (int z = 0; z < count.Length; z++) sum += count[z];

@@ -29,7 +29,7 @@ namespace WFC
 
             function.Analysis(tiles);
 
-            var newMap = function.Generate(new Vector2DInt(5,5), '-', '*', new Vector2DInt(0,0)  );
+            var newMap = function.Generate(new Vector2DInt(30, 30), '-', '*', new Vector2DInt(15,15)  );
             for (int i = 0; i < newMap.GetLength(0); i++)
             {
                 for (int z = 0; z < newMap.GetLength(1); z++)

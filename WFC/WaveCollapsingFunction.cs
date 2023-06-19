@@ -1,12 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.Common;
-using System.Drawing;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using static WFC.TileFunctions;
 namespace WFC
 {
@@ -19,12 +13,12 @@ namespace WFC
     internal class WaveCollapsingFunction<TypeOfContent> 
     {
         private const int LayerCount = 1;
+   
         TileList<Tile<TypeOfContent>, TypeOfContent> tiles;
          
         public WaveCollapsingFunction()
         {
             tiles = new TileList<Tile<TypeOfContent>, TypeOfContent>();
-            TileFunctions.countLayers = countLayers;
         }
 
         /// <summary>
@@ -60,34 +54,36 @@ namespace WFC
         private static  void ColapsTile(TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap, Vector2DInt point)
         {
 
-            var tileList = colapsMap[point.y, point.x];
-            if(tileList.Count > 0)
-                tileList.RemoveAllExcept(tileList[GetRandomTile(tileList.Count)]);
-
             //var tileList = colapsMap[point.y, point.x];
-            //int[] count = new int[tileList.Count];
+            //if (tileList.Count > 0)
+            //    tileList.RemoveAllExcept(tileList[GetRandomTile(tileList.Count)]);
+            var tileList = colapsMap[point.y, point.x];
+            int[] count = new int[tileList.Count];
 
-            //SpiralArrayTraversal(colapsMap, point, (offset) =>
-            //{
-            //    var offsetPoint = offset - point ;
-            //    if (offsetPoint.x == 0  && offsetPoint.x == 0)
-            //        return;
-            //    for (int i = 0; i < count.Length; i++)
-            //    {
-            //        var tile = tileList[i];
-            //        foreach (var neighbour in colapsMap[offset.y, offset.x])
-            //        {
-            //            int index = neighbour.Neighbours[offsetPoint].IndexOf(new Neighbour<TypeOfContent>(tile));
-            //            if (index != -1)
-            //            {
-            //                count[i] += neighbour.Neighbours[offsetPoint][index].Count;
-            //            }
-            //        }
-            //    }
+            SpiralArrayTraversal(colapsMap, point, (offset) =>
+            {
+                var offsetPoint = offset - point;
+                if (offsetPoint.x == 0 && offsetPoint.x == 0)
+                    return;
+                for (int i = 0; i < count.Length; i++)
+                {
+                    var tile = tileList[i];
+                    foreach (var neighbour in colapsMap[offset.y, offset.x])
+                    {
+                        int index = neighbour.Neighbours[offsetPoint].IndexOf(new Neighbour<TypeOfContent>(tile));
+                        if (index != -1)
+                        {
+                            count[i] += neighbour.Neighbours[offsetPoint][index].Count;
+                        }
+                    }
+                }
 
 
-            //}, LayerCount);
-            //int randomIndex = GetRandomIndexByWeights(count);
+            }, LayerCount);
+            int randomIndex = GetRandomIndexByWeights(count);
+            if (tileList.Count > 0)
+                tileList.RemoveAllExcept(tileList[randomIndex]);
+
         }
 
         private TileList<Tile<TypeOfContent>, TypeOfContent>[,] GetColapsMap(Vector2DInt size)
@@ -117,32 +113,53 @@ namespace WFC
             });
             return contents;
         }
-        public static int i = 0;
-        private static void Colaps(TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap, Vector2DInt positionsTile)
-        {
-            Queue<Vector2DInt> queue = new Queue<Vector2DInt>();
-            AddNeighbourToQueue(colapsMap, queue, positionsTile);
-            TileList<Tile<TypeOfContent>, TypeOfContent> posibleTile;
-            while (queue.Count > 0)
-            {
-                positionsTile = queue.Dequeue();
-                posibleTile = colapsMap[positionsTile.y, positionsTile.x];
-                int countRemoved = posibleTile.RemoveAll(t => !IsTilePossible(t, positionsTile, colapsMap));
-                if (countRemoved > 0) AddNeighbourToQueue(colapsMap, queue, positionsTile);
-            }
 
-            int maxCountTiles = colapsMap[0, 0].Count;
-            Vector2DInt pointMaxCount = new Vector2DInt();
-            SpiralArrayTraversal(colapsMap, new Vector2DInt(), (point) =>
+        private void Colaps(TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap, Vector2DInt positionsTile)
+        {
+            int maxTryFix = 1000;
+            int iteration = 0;
+            int maxIteration = colapsMap.GetLength(0) * colapsMap.GetLength(1);
+            while (iteration++ < maxIteration)
             {
-                if (maxCountTiles < colapsMap[point.y, point.x].Count) {
-                    maxCountTiles = colapsMap[point.y, point.x].Count;
-                    pointMaxCount = point;
+
+                int fixCounter = 0;
+                Queue<Vector2DInt> queue = new Queue<Vector2DInt>();
+                AddNeighbourToQueue(colapsMap, queue, positionsTile);
+                TileList<Tile<TypeOfContent>, TypeOfContent> posibleTile;
+                while (queue.Count > 0 && maxTryFix > fixCounter)
+                {
+                    positionsTile = queue.Dequeue();
+                    posibleTile = colapsMap[positionsTile.y, positionsTile.x];
+                    int countRemoved = posibleTile.RemoveAll(t => !IsTilePossible(t, positionsTile, colapsMap));
+                    if (countRemoved > 0) AddNeighbourToQueue(colapsMap, queue, positionsTile);
+                    //if(posibleTile.Count == 0)
+                    //{
+                    //    SpiralArrayTraversal(colapsMap, positionsTile, (positionNeighbour) =>
+                    //    {
+                    //        colapsMap[positionNeighbour.y, positionNeighbour.x].Clear();
+                    //        colapsMap[positionNeighbour.y, positionNeighbour.x].AddRange(tiles);
+                    //    }, LayerCount);
+                    //    AddNeighbourToQueue(colapsMap, queue, positionsTile);
+                    //    queue.Enqueue(positionsTile);
+
+
+                    //    fixCounter++;
+                    //}
                 }
-            });
-            if (maxCountTiles == 1) return;
-            ColapsTile(colapsMap, pointMaxCount);
-            Colaps(colapsMap, pointMaxCount);
+                if(fixCounter > 0) Console.WriteLine(fixCounter);
+                int maxCountTiles = colapsMap[0, 0].Count;
+                Vector2DInt pointMaxCount = new Vector2DInt();
+                SpiralArrayTraversal(colapsMap, new Vector2DInt(), (point) =>
+                {
+                    if (maxCountTiles < colapsMap[point.y, point.x].Count)
+                    {
+                        maxCountTiles = colapsMap[point.y, point.x].Count;
+                        pointMaxCount = point;
+                    }
+                });
+                if (maxCountTiles <= 1) return;
+                ColapsTile(colapsMap, pointMaxCount);
+            }
         }
 
         private static bool IsTilePossible(Tile<TypeOfContent> tile, Vector2DInt positionsTile, TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap)
@@ -164,9 +181,10 @@ namespace WFC
         //переделать
         private static void AddNeighbourToQueue(TileList<Tile<TypeOfContent>, TypeOfContent>[,] colapsMap, Queue<Vector2DInt> queue, Vector2DInt positionsTile)
         {
-            SpiralArrayTraversal(colapsMap, positionsTile, (positionsTile)=>
+            SpiralArrayTraversal(colapsMap, positionsTile, (position)=>
             {
-                queue.Enqueue(positionsTile);
+                if(position != positionsTile)
+                    queue.Enqueue(position);
             }, LayerCount);
         }
 

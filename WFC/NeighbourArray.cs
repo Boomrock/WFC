@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using static WFC.TileFunctions;
 
 namespace WFC
 {
     internal class NeighbourArray<TypeOfContent>
     {
         private TileList<Neighbour<TypeOfContent>,TypeOfContent>[,] neighbours;
-        private int[] center = new int[2];
+        private Vector2DInt center; 
 
         public NeighbourArray(int CountLayers)
         {
@@ -20,8 +18,14 @@ namespace WFC
            #######
              */
             neighbours = new TileList<Neighbour<TypeOfContent>, TypeOfContent>[CountLayers * 2 + 1, CountLayers * 2 + 1];
-            center[0] = neighbours.GetLength(0) / 2; 
-            center[1] = neighbours.GetLength(1) / 2; 
+            center.y = neighbours.GetLength(0) / 2; 
+            center.x = neighbours.GetLength(1) / 2;
+            SpiralArrayTraversal(neighbours, center, (offset) =>
+            {
+
+                neighbours[offset.y, offset.x] = new TileList<Neighbour<TypeOfContent>, TypeOfContent>();
+            });
+            
         }
 
         internal TileList<Neighbour<TypeOfContent>, TypeOfContent>this[int y, int x]
@@ -29,14 +33,26 @@ namespace WFC
             get
             { 
 
-                return neighbours[center[0] + y, center[1] + x];
+                return neighbours[center.y + y, center.x + x];
             }
             set {
 
-                neighbours[center[0] + y, center[1] + x] = value;
+                neighbours[center.y + y, center.x + x] = value;
             }
         }
+        internal TileList<Neighbour<TypeOfContent>, TypeOfContent> this[Vector2DInt point]
+        {
+            get
+            {
 
+                return neighbours[center.y + point.y, center.x + point.x];
+            }
+            set
+            {
+
+                neighbours[center.y + point.y, center.x + point.x] = value;
+            }
+        }
         internal int GetLength(int dimension)
         {
             return neighbours.GetLength(dimension);

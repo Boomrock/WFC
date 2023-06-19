@@ -11,7 +11,6 @@ namespace WFC
 {
     internal class TileList<Type, TypeOfContent> : List<Type> where Type : Tile<TypeOfContent>
     {
-        private List<Type> tiles;
 
         internal TileList(List<Tile<TypeOfContent>> tiles)
         {
@@ -27,8 +26,6 @@ namespace WFC
 
         internal void RemoveAllExcept(Tile<TypeOfContent> tile)
         {
-            if (!this.Contains(tile))
-                return;
             int i = 0;
             while (this.Count != 1)
             {
@@ -48,24 +45,28 @@ namespace WFC
         /// <param name="Tile"></param>
         /// <param name="offsetY"></param>
         /// <param name="offsetX"></param>
-        internal void DeleteUnpossibleTile(Tile<TypeOfContent> Tile, int offsetY, int offsetX)
+        internal bool RemoveUnpossibleTile(Tile<TypeOfContent> Tile, Vector2DInt point)
         {
             //Смотрим на соседей точки ( int offsetY, int offsetX), координаты относительные 
             //Для соседней точки наша точка имеет координаты - ( int offsetY, int offsetX)
             //Смотрим каких соседей нет у соседней точки в нашей строчке
             //удаляем такие тайлы
-            if (this.Count == 1)
-                return;
-
+            bool isChance = false;
             NeighbourArray<TypeOfContent> neighbours = Tile.Neighbours;
-            for (int i = 0; i < this.Count; i++)
+            int i = 0;
+            while (i < this.Count)
             {
+
                 var tile = this[i];
-                if (!(neighbours[offsetY, offsetX].Contains(tile as Tile<TypeOfContent>)))
+                if (!neighbours[-point.y, -point.x].Contains(tile as Tile<TypeOfContent>))
                 {
                     Remove(tile);
+                    isChance = true;
                 }
+                else
+                    i++;
             }
+            return isChance;
 
         }
         /// <summary>

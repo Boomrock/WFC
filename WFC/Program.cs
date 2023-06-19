@@ -8,20 +8,13 @@ namespace WFC
         static void Main(string[] args)
         {
 
-            int[,] dimensions = new int[,]
-            {
-                   {-1, 0},
-                   { 0,-1},
-                   { 1, 0},
-                   { 0, 1},
-            };
             char[,] map = new char[,] {
-            {'-', 'c', 'c', 'd', 'в', 'd'},
-            {'c', 'T', 'T', 'c', 's', 'a'},
-            {'d', 'c', 'c', 'x', 'T', 'O'},
-            {'-', 'x', 'R', 'x', 'd', 'O'},
-            {'D', 'x', 'S', 'x', 'a', '-'},
-            {'-', 'a', 'x', 'S', 's', '-'}
+            {'-', '-', '-', '-', '-', '-'},
+            {'-', '-', '-', 'c', '-', '-'},
+            {'-', 'c', 'c', 'x', 'c', '-'},
+            {'c', 'x', 'x', 'x', 'x', 'c'},
+            {'x', 'x', 'x', 'x', 'x', 'x'},
+            {'x', 'x', 'x', 'x', 'x', 'x'}
 
             };
             WaveCollapsingFunction<char> function = new WaveCollapsingFunction<char>();
@@ -33,11 +26,13 @@ namespace WFC
                     tiles[i, z] = new Tile<char>(map[i, z]);
                 }
             }
+
             function.Analysis(tiles);
-            var newMap = function.Colaps(6, 6, 'S', '$');
-            for (int i = 0; i < map.GetLength(0); i++)
+
+            var newMap = function.Generate(new Vector2DInt(5,5), '-', '*', new Vector2DInt(0,0)  );
+            for (int i = 0; i < newMap.GetLength(0); i++)
             {
-                for (int z = 0; z < map.GetLength(1); z++)
+                for (int z = 0; z < newMap.GetLength(1); z++)
                 {
                     Console.Write(newMap[i, z]);
                 }

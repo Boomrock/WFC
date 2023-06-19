@@ -6,23 +6,27 @@ namespace WFC
     internal class TileFunctions
     {
         internal static int countLayers = 1;
+        static Random random = new Random();
         public static int GetRandomIndexByWeights(int[] count)
         {
             float sum = 0;
             float[] weight = new float[count.Length];
             for (int z = 0; z < count.Length; z++) sum += count[z];
             for (int r = 0; r < count.Length; r++) weight[r] = (float)count[r] / sum;
-            Random random = new Random();
             float percent = (float)random.NextDouble();
-            float curentPercent = 0;
+            float currentPercent = 0;
             int i = 0;
-            while (percent > curentPercent)
+            while (percent > currentPercent)
             {
-                curentPercent += weight[i];
+                currentPercent += weight[i];
                 i++;
             }
-            return i;
+            return i - 1;
 
+        }
+        public static int GetRandomTile(int Count)
+        {
+            return random.Next(Count);
         }
         /// <summary>
         /// добавляет соседей 
@@ -32,12 +36,14 @@ namespace WFC
         /// <param name="tile">кому добавляем соседей</param>
         /// <param name="y">координата tile</param>
         /// <param name="x">координата tile</param>
-        internal static void AddNeighbour<TypeOfContent>(Tile<TypeOfContent>[,] arrayContents, Tile<TypeOfContent>  tile, int y, int x)
+        internal static void AddNeighbour<TypeOfContent>(Tile<TypeOfContent>[,] arrayContents, Tile<TypeOfContent>  tile, Vector2DInt point)
         {
-            LookAtNeighbour(arrayContents, y, x, (offsetY, offsetX) =>
+            SpiralArrayTraversal(arrayContents, point, (pointNeghbour) =>
             {
-                tile.Neighbours.AddNeighbour(arrayContents[offsetY, offsetY], offsetY - y, offsetX - x );// 
-            });
+                var offset = pointNeghbour - point;
+                if(offset != new Vector2DInt(0,0))
+                tile.Neighbours.AddNeighbour(arrayContents[pointNeghbour.y, pointNeghbour.x], offset.y, offset.x);// 
+            }, 1);
         }  
    /// <summary>
    /// Проходит все точки вокруг (y,x) по спирали
@@ -49,34 +55,34 @@ namespace WFC
    /// <param name="LayersCount"></param>
    /// <param name="action"></param>
    /// <param name=""></param>
-        internal static void SpiralArrayTraversal<type>(type[,] arrayContents, int y, int x, Action<int, int> action, int LayerCount = -1)
+        internal static void SpiralArrayTraversal<type>(type[,] arrayContents, Vector2DInt position, Action<Vector2DInt> action, int LayerCount = -1)
         {
             // Создаем очередь для хранения координат элементов, которые нужно посетить
             Queue<(int, int)> queue = new Queue<(int, int)>();
             // Создаем массив для отметки элементов, которые уже были посещены
             bool[,] visited = new bool[arrayContents.GetLength(0), arrayContents.GetLength(1)];
             // Добавляем точку p в очередь и отмечаем ее как посещенную
-            queue.Enqueue((y, x));
-            visited[y, x] = true;
+            queue.Enqueue((position.y, position.x));
+            visited[position.y, position.x] = true;
             // Пока очередь не пуста
             while (queue.Count > 0)
             {
 
                 // Извлекаем первый элемент из очереди
-                (x , y) = queue.Dequeue();
+                (position.y, position.x) = queue.Dequeue();
                 // Делаем что-то с этим элементом
-                action(y, x);
+                action(position);
                 // Проходим по всем четырем направлениям от этого элемента
                 int[] dx = { 0, 0, -1, 1, -1, 1, -1, 1}; // Смещение по x
                 int[] dy = { -1, 1, 0, 0, -1, 1, 1, -1 }; // Смещение по y
 
                 if (LayerCount != 0)
                 {
-                    for (int k = 0; k < 4; k++)
+                    for (int k = 0; k < 8; k++)
                     {
                         // Вычисляем координаты соседнего элемента
-                        int nx = x + dx[k];
-                        int ny = y + dy[k];
+                        int nx = position.x + dx[k];
+                        int ny = position.y + dy[k];
                         // Проверяем, что они в пределах массива и не были посещены
                         if (nx >= 0 && nx < arrayContents.GetLength(1) && ny >= 0 && ny < arrayContents.GetLength(0) && !visited[ny, nx])
                         {
@@ -89,52 +95,6 @@ namespace WFC
                 }
             }
         }
-        internal static void LookAtNeighbour<type>(type[,] arrayContents, int y, int x, Action<int, int> action)
-        {
-
-            for (int _y = -countLayers; _y <= countLayers; _y++)
-            {
-
-                for (int _x = -countLayers; _x <= countLayers; _x++)
-                {
-                    if (_x == 0 && _y == 0)
-                        continue;
-                    int offsetY = y + _y;
-                    int offsetX = x + _x;
-                    if (!(offsetX >= 0 &&
-                        offsetY >= 0 &&
-                        offsetX < arrayContents.GetLength(1) &&
-                        offsetY < arrayContents.GetLength(0)))
-                        continue;
-                    action(offsetY, offsetX);
-                }
-
-            }
-
-        }
-        internal static void LookAtNeighbour<TypyOfContent>(NeighbourArray<TypyOfContent> arrayContents, int y, int x, Action<int, int> action)
-        {
-
-            for (int _y = -countLayers; _y <= countLayers; _y++)
-            {
-
-                for (int _x = -countLayers; _x <= countLayers; _x++)
-                {
-
-                    int offsetY = y + _x;
-                    int offsetX = x + _x;
-                    if (offsetX == 0 && offsetY == 0)
-                        continue;
-                    if (!(offsetX > 0 &&
-                        offsetY > 0 &&
-                        offsetX < arrayContents.GetLength(1) &&
-                        offsetY < arrayContents.GetLength(0)))
-                        continue;
-                    action(offsetY, offsetX);
-                }
-
-            }
-
-        }
+      
     }
 }

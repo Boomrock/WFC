@@ -32,6 +32,16 @@ namespace WFC
                 throw new Exception("в Tile длинна хэша больше 16");
             }
         }
+        public Tile(TypeOfContent content, int LayersCount)
+        {
+            this.content = content;
+            this.hash = HashUtils.GetHashObject(content);
+            this.neighbours = new NeighbourArray<TypeOfContent>(LayersCount);
+            if (hash.Length > 16)
+            {
+                throw new Exception("в Tile длинна хэша больше 16");
+            }
+        }
 
         public static bool operator ==(Tile<TypeOfContent> left, Tile<TypeOfContent> right)
         {

@@ -118,33 +118,31 @@ namespace WFC
         {
             int maxTryFix = 1000;
             int iteration = 0;
-            int maxIteration = colapsMap.GetLength(0) * colapsMap.GetLength(1);
+            int maxIteration = 1000;
+            Queue<Vector2DInt> queue = new Queue<Vector2DInt>();
+            AddNeighbourToQueue(colapsMap, queue, positionsTile);
+            TileList<Tile<TypeOfContent>, TypeOfContent> posibleTile;
             while (iteration++ < maxIteration)
             {
-
                 int fixCounter = 0;
-                Queue<Vector2DInt> queue = new Queue<Vector2DInt>();
-                AddNeighbourToQueue(colapsMap, queue, positionsTile);
-                TileList<Tile<TypeOfContent>, TypeOfContent> posibleTile;
                 while (queue.Count > 0 && maxTryFix > fixCounter)
                 {
                     positionsTile = queue.Dequeue();
                     posibleTile = colapsMap[positionsTile.y, positionsTile.x];
                     int countRemoved = posibleTile.RemoveAll(t => !IsTilePossible(t, positionsTile, colapsMap));
                     if (countRemoved > 0) AddNeighbourToQueue(colapsMap, queue, positionsTile);
-                    //if(posibleTile.Count == 0)
-                    //{
-                    //    SpiralArrayTraversal(colapsMap, positionsTile, (positionNeighbour) =>
-                    //    {
-                    //        colapsMap[positionNeighbour.y, positionNeighbour.x].Clear();
-                    //        colapsMap[positionNeighbour.y, positionNeighbour.x].AddRange(tiles);
-                    //    }, LayerCount);
-                    //    AddNeighbourToQueue(colapsMap, queue, positionsTile);
-                    //    queue.Enqueue(positionsTile);
+                    if(posibleTile.Count == 0)
+                    {
+                        SpiralArrayTraversal(colapsMap, positionsTile, (positionNeighbour) =>
+                        {
+                            colapsMap[positionNeighbour.y, positionNeighbour.x].Clear();
+                            colapsMap[positionNeighbour.y, positionNeighbour.x].AddRange(tiles);
+                            queue.Enqueue(positionNeighbour);
 
+                        }, LayerCount + 1);
 
-                    //    fixCounter++;
-                    //}
+                        fixCounter++;
+                    }
                 }
                 if(fixCounter > 0) Console.WriteLine(fixCounter);
                 int maxCountTiles = colapsMap[0, 0].Count;
@@ -157,8 +155,14 @@ namespace WFC
                         pointMaxCount = point;
                     }
                 });
-                if (maxCountTiles <= 1) return;
+                if (maxCountTiles == 1) {
+                    Console.WriteLine($" количество итераций: {iteration}");
+                    return; 
+                }
+
                 ColapsTile(colapsMap, pointMaxCount);
+                AddNeighbourToQueue(colapsMap, queue, pointMaxCount);
+                queue.Enqueue(pointMaxCount);
             }
         }
 
@@ -185,7 +189,7 @@ namespace WFC
             {
                 if(position != positionsTile)
                     queue.Enqueue(position);
-            }, LayerCount);
+            }, LayerCount + 1);
         }
 
 

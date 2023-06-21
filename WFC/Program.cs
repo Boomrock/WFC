@@ -13,7 +13,7 @@ namespace WFC
             {'-', '-', '-', 'c', '-', '-'},
             {'-', 'c', 'c', 'x', 'c', '-'},
             {'c', 'x', 'x', 'x', 'x', 'c'},
-            {'x', 'x', 'x', 'x', 'x', 'x'},
+            {'x', 'x', 'x', 'd', 'x', 'x'},
             {'x', 'x', 'x', 'x', 'x', 'x'}
 
             };
@@ -29,7 +29,7 @@ namespace WFC
 
             function.Analysis(tiles);
 
-            var newMap = function.Generate(new Vector2DInt(30, 30), '-', '*', new Vector2DInt(15,15)  );
+            var newMap = function.Generate(new Vector2DInt(20, 50), '-', '*', new Vector2DInt(9,0)  );
             for (int i = 0; i < newMap.GetLength(0); i++)
             {
                 for (int z = 0; z < newMap.GetLength(1); z++)
